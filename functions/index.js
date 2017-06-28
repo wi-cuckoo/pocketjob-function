@@ -18,18 +18,58 @@ const getOpenId = (js_code) => {
 const admin = require('firebase-admin')
 admin.initializeApp(functions.config().firebase)
 
+const nodemailer = require('nodemailer');
+
+const gmailEmail = encodeURIComponent(functions.config().gmail.email);
+const gmailPassword = encodeURIComponent(functions.config().gmail.password);
+const mailTransport = nodemailer.createTransport(`smtps://${gmailEmail}:${gmailPassword}@smtp.gmail.com`);
+
+const APP_NAME = 'PocketJob Tech';
+const ADMIN_MAIL = 'only_one23@163.com';
+
+// Sends a welcome email to the given user.
+function sendNotification(email, resume) {
+  const mailOptions = {
+    from: `${APP_NAME} <ypliuwei@gmail.com>`,
+    to: email
+  };
+
+  // The user subscribed to the newsletter.
+  mailOptions.subject = `New Resume From ${APP_NAME}`;
+  mailOptions.text = `杨总，你有新的消息，请注意查收！！！\n\n` +
+    `\t姓名：\t${resume.name}\n` +
+    `\t年龄：\t${resume.age}\n` +
+    `\t毕业院校：\t${resume.university}\n` +
+    `\t电话号码：\t${resume.phone}\n` +
+    `\t申请职位：\t${resume.job}\n` +
+    `\t自我介绍：\t${resume.intro}\n\n\n` +
+    ` Copyright © 2017 PocketJob Tech`;
+
+  return mailTransport.sendMail(mailOptions).then(() => {
+    console.log('New notify email sent to:', email);
+  });
+}
+
 // Listens for new messages added to /messages/:pushId/original and creates an
 // uppercase version of the message to /messages/:pushId/uppercase
-exports.refreshUserOpenId = functions.database.ref('/users/{userId}')
+exports.newResumeNotify = functions.database.ref('/candidates/{resumeId}')
     .onWrite(event => {
       // Grab the current value of what was written to the Realtime Database.
-      const { js_code } = event.data.val()
-      console.log('User', event.params.userId, `\t${js_code}`)
+      if (!event.data.exists()) {
+        return;
+      }
+
+      const resume = event.data.val()
+      console.log(resume)
+      console.log('new resume: ', event.params.resumeId)
       
       // call api of weixin to fetch the openid
-      return getOpenId(js_code).then( resp => {
-      	resp && event.data.ref.child('openid').set(resp.openid)
-      })
+      // return getOpenId(js_code).then( resp => {
+      // 	resp && event.data.ref.child('openid').set(resp.openid)
+      // })
+
+      // sent email as an alteration
+      return sendNotification(ADMIN_MAIL, resume)
 
       // You must return a Promise when performing asynchronous tasks inside a Functions such as
       // writing to the Firebase Realtime Database.
