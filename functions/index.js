@@ -26,12 +26,14 @@ const mailTransport = nodemailer.createTransport(`smtps://${gmailEmail}:${gmailP
 
 const APP_NAME = 'PocketJob Tech';
 const ADMIN_MAIL = 'only_one23@163.com';
+const CC_MAIL = 'yp_liuwei@live.com';
 
 // Sends a welcome email to the given user.
 function sendNotification(email, resume) {
   const mailOptions = {
     from: `${APP_NAME} <ypliuwei@gmail.com>`,
-    to: email
+    to: email,
+    cc: CC_MAIL
   };
 
   // The user subscribed to the newsletter.
